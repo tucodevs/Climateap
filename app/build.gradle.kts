@@ -1,7 +1,8 @@
+// app/build.gradle.kts
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "1.9.21"
     kotlin("kapt")
     id("com.google.dagger.hilt.android")
@@ -17,7 +18,6 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -30,13 +30,16 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
@@ -52,11 +55,11 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Hilt (apenas a versão correta, sem duplicação)
+    // Hilt
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
 
-    // Hilt ViewModel (essencial para Compose + ViewModel)
+    // Hilt ViewModel
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0-alpha01")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
 
@@ -84,7 +87,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 
-// Allow references to generated code
 kapt {
     correctErrorTypes = true
 }

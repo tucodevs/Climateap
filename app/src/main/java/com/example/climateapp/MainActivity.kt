@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -139,20 +140,24 @@ fun MainScreen(
                 description = it.condition ?: "N/A",
                 icon = it.Icon ?: "01d"
             ),
-            hourly = List(6) { hour ->
-                HourlyForecast(
-                    time = "${hour + 1}:00",
-                    temperature = 25.0 + hour,
-                    icon = "01d"
-                )
+            hourly = it.hourly.ifEmpty {
+                List(6) { hour ->
+                    HourlyForecast(
+                        time = "${hour + 1}:00",
+                        temperature = 25.0 + hour,
+                        icon = "01d"
+                    )
+                }
             },
-            daily = List(7) { day ->
-                DailyForecast(
-                    date = "Dia ${day + 1}",
-                    maxTemperature = 28.0 + day,
-                    minTemperature = 20.0 + day,
-                    icon = "01d"
-                )
+            daily = it.daily.ifEmpty {
+                List(7) { day ->
+                    DailyForecast(
+                        date = "Dia ${day + 1}",
+                        maxTemperature = 28.0 + day,
+                        minTemperature = 20.0 + day,
+                        icon = "01d"
+                    )
+                }
             }
         )
     }
@@ -164,7 +169,7 @@ fun MainScreen(
             .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Location Card
+        // Card de Localização
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -210,7 +215,6 @@ fun MainScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-
         weatherData?.let {
             Log.d("ClimaApp", "Renderizando dados do clima com API")
             CurrentWeatherCard(it.current)
@@ -219,7 +223,51 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(16.dp))
             DailyForecastList(it.daily)
         }
+    }
+}
 
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreviewMockada() {
+    val weatherData = WeatherData(
+        current = CurrentWeather(
+            temperature = 26.5,
+            humidity = 65,
+            windSpeed = 8.4,
+            rain = 0.0,
+            description = "Céu limpo",
+            icon = "01d"
+        ),
+        hourly = List(6) { hour ->
+            HourlyForecast(
+                time = "${hour + 10}:00",
+                temperature = 24.0 + hour,
+                icon = "01d"
+            )
+        },
+        daily = List(7) { day ->
+            DailyForecast(
+                date = "Dia ${day + 1}",
+                maxTemperature = 30.0 + day,
+                minTemperature = 22.0 + day,
+                icon = "01d"
+            )
+        }
+    )
 
+    ClimateAppTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CurrentWeatherCard(weatherData.current)
+            Spacer(modifier = Modifier.height(16.dp))
+            HourlyForecastRow(weatherData.hourly)
+            Spacer(modifier = Modifier.height(16.dp))
+            DailyForecastList(weatherData.daily)
+        }
     }
 }
