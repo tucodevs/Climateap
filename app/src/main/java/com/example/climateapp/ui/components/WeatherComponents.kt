@@ -19,7 +19,11 @@ fun CurrentWeatherCard(weather: CurrentWeather) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+        )
     ) {
         Column(
             modifier = Modifier
@@ -36,7 +40,7 @@ fun CurrentWeatherCard(weather: CurrentWeather) {
                 style = MaterialTheme.typography.titleMedium
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(30.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -56,7 +60,12 @@ fun HourlyForecastRow(forecasts: List<HourlyForecast>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -100,6 +109,7 @@ fun DailyForecastList(forecasts: List<DailyForecast>) {
             .fillMaxWidth()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+
     ) {
         Column(
             modifier = Modifier.padding(16.dp)

@@ -13,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +28,7 @@ import com.example.climateapp.ui.WeatherViewModel
 import com.example.climateapp.ui.components.*
 import com.example.climateapp.ui.theme.ClimateAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -120,6 +124,8 @@ fun MainScreen(
 ) {
     val viewModel: WeatherViewModel = viewModel()
     val state = viewModel.weatherInfoState.collectAsState().value
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(currentLocation) {
         Log.d("ClimaApp", "LaunchedEffect acionado. Localização = $currentLocation")
@@ -157,69 +163,119 @@ fun MainScreen(
         )
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Location Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Localização Atual", style = MaterialTheme.typography.titleMedium)
-                    IconButton(onClick = onGetLocation) { Text("Atualizar") }
-                }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "HELLO",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                
+                // Search Bar
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = { },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text("Search...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search"
+                        )
+                    },
+                    singleLine = true,
 
-                currentLocation?.let { location ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Latitude", style = MaterialTheme.typography.bodyMedium)
-                            Text(String.format("%.6f°", location.latitude), style = MaterialTheme.typography.titleMedium)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Longitude", style = MaterialTheme.typography.bodyMedium)
-                            Text(String.format("%.6f°", location.longitude), style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-                } ?: Text(
-                    text = "Localização não disponível",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Hamburger Menu Button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open Menu"
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // Location Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Localização Atual", style = MaterialTheme.typography.titleMedium)
+                        IconButton(onClick = onGetLocation) { Text("Atualizar") }
+                    }
 
+                    currentLocation?.let { location ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Latitude", style = MaterialTheme.typography.bodyMedium)
+                                Text(String.format("%.6f°", location.latitude), style = MaterialTheme.typography.titleMedium)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Longitude", style = MaterialTheme.typography.bodyMedium)
+                                Text(String.format("%.6f°", location.longitude), style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+                    } ?: Text(
+                        text = "Localização não disponível",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
-        weatherData?.let {
-            Log.d("ClimaApp", "Renderizando dados do clima com API")
-            CurrentWeatherCard(it.current)
             Spacer(modifier = Modifier.height(16.dp))
-            HourlyForecastRow(it.hourly)
-            Spacer(modifier = Modifier.height(16.dp))
-            DailyForecastList(it.daily)
+
+            weatherData?.let {
+                Log.d("ClimaApp", "Renderizando dados do clima com API")
+                CurrentWeatherCard(it.current)
+                Spacer(modifier = Modifier.height(16.dp))
+                HourlyForecastRow(it.hourly)
+                Spacer(modifier = Modifier.height(16.dp))
+                DailyForecastList(it.daily)
+            }
         }
-
-
     }
 }

@@ -3,6 +3,7 @@ package com.example.climateapp.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.climateapp.data.di.module.WeatherInfo
 import com.example.climateapp.data.repository.WeatherRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
