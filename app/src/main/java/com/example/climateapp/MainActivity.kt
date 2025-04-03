@@ -17,47 +17,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.climateapp.data.*
+import com.example.climateapp.ui.WeatherViewModel
 import com.example.climateapp.ui.components.*
 import com.example.climateapp.ui.theme.ClimateAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     private lateinit var locationService: LocationService
     private var currentLocation by mutableStateOf<Location?>(null)
-
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        Log.d("MainActivity", "Permission result: $permissions")
+        Log.d("ClimaApp", "Resultado da permissão: $permissions")
         when {
             permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) ||
-            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                // Precise location granted
-                Log.d("MainActivity", "Location permission granted")
+                    permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                Log.d("ClimaApp", "Permissão de localização concedida")
                 getLocation()
             }
             else -> {
-                // No location access granted
-                Log.d("MainActivity", "Location permission denied")
-                Toast.makeText(this, "Location permission is required", Toast.LENGTH_LONG).show()
+                Log.d("ClimaApp", "Permissão de localização negada")
+                Toast.makeText(this, "A permissão de localização é obrigatória", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("ClimaApp", "MainActivity criada")
         enableEdgeToEdge()
+
         locationService = LocationService(this)
 
         setContent {
             ClimateAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Log.d("ClimaApp", "Renderizando MainScreen...")
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
                         currentLocation = currentLocation,
@@ -67,22 +69,21 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Check location permission after UI is set up
         checkLocationPermission()
     }
 
     private fun checkLocationPermission() {
-        Log.d("MainActivity", "Checking location permission")
+        Log.d("ClimaApp", "Verificando permissão de localização")
         when {
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
-                Log.d("MainActivity", "Location permission already granted")
+                Log.d("ClimaApp", "Permissão já concedida")
                 getLocation()
             }
             else -> {
-                Log.d("MainActivity", "Requesting location permission")
+                Log.d("ClimaApp", "Solicitando permissão de localização")
                 locationPermissionRequest.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -94,18 +95,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun getLocation() {
-        Log.d("MainActivity", "Getting location")
+        Log.d("ClimaApp", "Obtendo localização atual")
         if (!locationService.isLocationEnabled()) {
-            Log.d("MainActivity", "Location services are disabled")
-            Toast.makeText(this, "Please enable location services", Toast.LENGTH_LONG).show()
+            Log.d("ClimaApp", "Serviços de localização estão desativados")
+            Toast.makeText(this, "Ative os serviços de localização", Toast.LENGTH_LONG).show()
             return
         }
 
         locationService.getLastLocation { location ->
-            Log.d("MainActivity", "Location received: $location")
+            Log.d("ClimaApp", "Localização recebida: $location")
             currentLocation = location
             if (location == null) {
-                Toast.makeText(this, "Unable to get location. Please check your GPS settings.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Não foi possível obter a localização. Verifique o GPS.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -117,32 +118,44 @@ fun MainScreen(
     currentLocation: Location?,
     onGetLocation: () -> Unit
 ) {
-    // Sample data for preview
-    val sampleWeatherData = WeatherData(
-        current = CurrentWeather(
-            temperature = 25.0,
-            humidity = 65,
-            windSpeed = 12.0,
-            rain = 0.0,
-            description = "Partly Cloudy",
-            icon = "01d"
-        ),
-        hourly = List(6) { hour ->
-            HourlyForecast(
-                time = "${hour + 1}:00",
-                temperature = 25.0 + hour,
-                icon = "01d"
-            )
-        },
-        daily = List(7) { day ->
-            DailyForecast(
-                date = "Day ${day + 1}",
-                maxTemperature = 28.0 + day,
-                minTemperature = 20.0 + day,
-                icon = "01d"
-            )
+    val viewModel: WeatherViewModel = viewModel()
+    val state = viewModel.weatherInfoState.collectAsState().value
+
+    LaunchedEffect(currentLocation) {
+        Log.d("ClimaApp", "LaunchedEffect acionado. Localização = $currentLocation")
+        currentLocation?.let {
+            Log.d("ClimaApp", "Chamando ViewModel com lat=${it.latitude}, lon=${it.longitude}")
+            viewModel.updateWeatherInfo(it.latitude.toFloat(), it.longitude.toFloat())
         }
-    )
+    }
+
+    val weatherData = state.weatherInfo?.let {
+        WeatherData(
+            current = CurrentWeather(
+                temperature = it.temperature ?: 0.0,
+                humidity = it.humidity ?: 0,
+                windSpeed = it.windSpeed ?: 0.0,
+                rain = it.rain ?: 0.0,
+                description = it.condition ?: "N/A",
+                icon = it.Icon ?: "01d"
+            ),
+            hourly = List(6) { hour ->
+                HourlyForecast(
+                    time = "${hour + 1}:00",
+                    temperature = 25.0 + hour,
+                    icon = "01d"
+                )
+            },
+            daily = List(7) { day ->
+                DailyForecast(
+                    date = "Dia ${day + 1}",
+                    maxTemperature = 28.0 + day,
+                    minTemperature = 20.0 + day,
+                    icon = "01d"
+                )
+            }
+        )
+    }
 
     Column(
         modifier = modifier
@@ -169,43 +182,26 @@ fun MainScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Current Location",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    IconButton(onClick = onGetLocation) {
-                        Text("Refresh")
-                    }
+                    Text("Localização Atual", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = onGetLocation) { Text("Atualizar") }
                 }
-                
+
                 currentLocation?.let { location ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Latitude",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = String.format("%.6f°", location.latitude),
-                                style = MaterialTheme.typography.titleMedium
-                            )
+                            Text("Latitude", style = MaterialTheme.typography.bodyMedium)
+                            Text(String.format("%.6f°", location.latitude), style = MaterialTheme.typography.titleMedium)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Longitude",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = String.format("%.6f°", location.longitude),
-                                style = MaterialTheme.typography.titleMedium
-                            )
+                            Text("Longitude", style = MaterialTheme.typography.bodyMedium)
+                            Text(String.format("%.6f°", location.longitude), style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 } ?: Text(
-                    text = "Location not available",
+                    text = "Localização não disponível",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -214,19 +210,16 @@ fun MainScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Weather Components
-        CurrentWeatherCard(sampleWeatherData.current)
-        Spacer(modifier = Modifier.height(16.dp))
-        HourlyForecastRow(sampleWeatherData.hourly)
-        Spacer(modifier = Modifier.height(16.dp))
-        DailyForecastList(sampleWeatherData.daily)
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    ClimateAppTheme {
-        MainScreen(currentLocation = null, onGetLocation = {})
+        weatherData?.let {
+            Log.d("ClimaApp", "Renderizando dados do clima com API")
+            CurrentWeatherCard(it.current)
+            Spacer(modifier = Modifier.height(16.dp))
+            HourlyForecastRow(it.hourly)
+            Spacer(modifier = Modifier.height(16.dp))
+            DailyForecastList(it.daily)
+        }
+
+
     }
 }

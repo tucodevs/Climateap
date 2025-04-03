@@ -1,5 +1,6 @@
 package com.example.climateapp.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.climateapp.data.repository.WeatherRepository
@@ -21,10 +22,14 @@ class WeatherViewModel @Inject constructor(
 
     fun updateWeatherInfo(latitude: Float, longitude: Float) {
         viewModelScope.launch {
+            Log.d("ClimaApp", "Iniciando busca do clima: lat=$latitude, lon=$longitude")
             try {
                 _weatherInfoState.update { it.copy(isLoading = true, error = null) }
-                
+
                 val weatherInfo = repository.getWeatherData(latitude, longitude)
+
+                Log.d("ClimaApp", "Dados recebidos da API: $weatherInfo")
+
                 _weatherInfoState.update {
                     it.copy(
                         weatherInfo = weatherInfo,
@@ -32,11 +37,13 @@ class WeatherViewModel @Inject constructor(
                         error = null
                     )
                 }
+
             } catch (e: Exception) {
+                Log.e("ClimaApp", "Erro ao buscar clima: ${e.message}", e)
                 _weatherInfoState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to fetch weather data"
+                        error = e.message ?: "Falha ao buscar dados do clima"
                     )
                 }
             }

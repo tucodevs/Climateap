@@ -40,7 +40,7 @@ data class WeatherData(
     @SerialName("station") val station: String?,
     @SerialName("sources") val sources: List<String>,
     @SerialName("wind_dir") val windDirection: Int,
-    @SerialName("elev_angle") val elevationAngle: Int,
+    @SerialName("elev_angle") val elevationAngle: Double,
     @SerialName("datetime") val datetime: String?,
     @SerialName("precip") val precipitation: Double,
     @SerialName("ghi") val globalHorizontalIrradiance: Double,
